@@ -65,3 +65,13 @@ mod auto_merge_tests {
         assert_eq!(multiply(42, 0), 0);
     }
 }
+
+#[cfg(test)]
+mod failing_tests {
+    use super::calculator::*;
+
+    #[test]
+    fn test_broken_addition() {
+        assert_eq!(add(2, 2), 4, "2 + 2 should equal 4");
+    }
+}
