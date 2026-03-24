@@ -17,8 +17,12 @@ pub mod calculator {
 
     /// Divide two numbers. Returns None if divisor is zero.
     /// Divide with checked arithmetic.
-pub fn checked_divide(a: i32, b: i32) -> Option<i32> {
+    pub fn checked_divide(a: i32, b: i32) -> Option<i32> {
         if b == 0 { None } else { Some(a / b) }
+    }
+
+    pub fn divide(a: i32, b: i32) -> Result<i32, &str> {
+        if b == 0 { Err("division by zero") } else { Ok(a / b) }
     }
 }
 
