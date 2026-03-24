@@ -28,6 +28,11 @@ pub mod calculator {
     pub fn is_positive(n: i32) -> bool {
         n > 0
     }
+
+    /// Returns true if n is even, false if odd.
+    pub fn is_even(n: i32) -> bool {
+        n % 2 == 0
+    }
 }
 
 #[cfg(test)]
@@ -64,6 +69,12 @@ mod tests {
         assert!(is_positive(5));
         assert!(!is_positive(0));
         assert!(!is_positive(-3));
+    }
+
+    #[test]
+    fn test_is_even() {
+        assert!(is_even(4));
+        assert!(!is_even(3));
     }
 }
 
