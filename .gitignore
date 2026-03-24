@@ -1,0 +1,11 @@
+# Rust
+rust/target/
+
+# Go
+go/bin/
+
+# Forza
+.worktrees/
+.forza/
+.plan_breadcrumb.md
+.review_breadcrumb.md

@@ -1,0 +1,85 @@
+# forza-test: integration test scenarios for forza
+#
+# Each route targets a specific test scenario label.
+# Issues are seeded with known problems; forza processes them;
+# verify.sh checks the outcomes.
+
+[global]
+repo = "joshrotenberg/forza-test"
+model = "claude-sonnet-4-6"
+gate_label = "forza:ready"
+branch_pattern = "automation/{issue}-{slug}"
+max_concurrency = 3
+
+[security]
+authorization_level = "trusted"
+
+# ── Rust scenarios ─────────────────────────────────────────────
+
+[routes.bug-rust]
+type = "issue"
+label = "test:bug-rust"
+workflow = "bug"
+concurrency = 2
+
+[routes.feature-rust]
+type = "issue"
+label = "test:feature-rust"
+workflow = "feature"
+concurrency = 2
+
+[routes.research-rust]
+type = "issue"
+label = "test:research-rust"
+workflow = "research"
+concurrency = 1
+
+# ── Go scenarios ───────────────────────────────────────────────
+
+[routes.bug-go]
+type = "issue"
+label = "test:bug-go"
+workflow = "bug"
+concurrency = 2
+
+[routes.feature-go]
+type = "issue"
+label = "test:feature-go"
+workflow = "feature"
+concurrency = 2
+
+# ── PR condition scenarios ─────────────────────────────────────
+
+[routes.auto-fix-ci]
+type = "pr"
+condition = "ci_failing"
+workflow = "pr-fix-ci"
+scope = "forza_owned"
+max_retries = 2
+concurrency = 1
+poll_interval = 60
+
+[routes.auto-rebase]
+type = "pr"
+condition = "has_conflicts"
+workflow = "pr-rebase"
+scope = "forza_owned"
+max_retries = 2
+concurrency = 1
+poll_interval = 60
+
+[routes.auto-merge]
+type = "pr"
+condition = "ci_green_no_objections"
+workflow = "pr-merge"
+scope = "forza_owned"
+max_retries = 2
+concurrency = 1
+poll_interval = 60
+
+# ── Validation per language ────────────────────────────────────
+# Note: validation runs in the worktree which will be inside the
+# repo root. We use a script that detects which language changed.
+
+[validation]
+commands = ["./scripts/validate.sh"]
