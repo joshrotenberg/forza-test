@@ -50,3 +50,18 @@ mod tests {
         assert_eq!(divide(10, 0), None);
     }
 }
+
+#[cfg(test)]
+mod auto_merge_tests {
+    use super::calculator::*;
+
+    #[test]
+    fn test_add_negative() {
+        assert_eq!(add(-1, -2), -3);
+    }
+
+    #[test]
+    fn test_multiply_by_zero() {
+        assert_eq!(multiply(42, 0), 0);
+    }
+}
