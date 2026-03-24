@@ -72,7 +72,6 @@ mod failing_tests {
 
     #[test]
     fn test_broken_addition() {
-        // This test intentionally fails — forza should fix it
-        assert_eq!(add(2, 2), 5, "2 + 2 should equal 5 (this is wrong)");
+        assert_eq!(add(2, 2), 4, "2 + 2 should equal 4");
     }
 }
