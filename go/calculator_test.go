@@ -33,3 +33,12 @@ func TestDivideByZero(t *testing.T) {
 		t.Error("Divide(10, 0) should return error")
 	}
 }
+
+func TestAbs(t *testing.T) {
+	if got := Abs(-5); got != 5 {
+		t.Errorf("Abs(-5) = %d, want 5", got)
+	}
+	if got := Abs(5); got != 5 {
+		t.Errorf("Abs(5) = %d, want 5", got)
+	}
+}

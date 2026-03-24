@@ -19,6 +19,11 @@ pub mod calculator {
     pub fn divide(a: i32, b: i32) -> Option<i32> {
         if b == 0 { None } else { Some(a / b) }
     }
+
+    /// Return the absolute value of a number.
+    pub fn abs(a: i32) -> i32 {
+        if a < 0 { -a } else { a }
+    }
 }
 
 #[cfg(test)]
@@ -48,5 +53,11 @@ mod tests {
     #[test]
     fn test_divide_by_zero() {
         assert_eq!(divide(10, 0), None);
+    }
+
+    #[test]
+    fn test_abs() {
+        assert_eq!(abs(-5), 5);
+        assert_eq!(abs(5), 5);
     }
 }

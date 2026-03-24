@@ -27,3 +27,11 @@ func Divide(a, b int) (int, error) {
 	}
 	return a / b, nil
 }
+
+// Abs returns the absolute value of an integer.
+func Abs(a int) int {
+	if a < 0 {
+		return -a
+	}
+	return a
+}
