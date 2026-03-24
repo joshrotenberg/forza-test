@@ -21,8 +21,12 @@ pub mod calculator {
         if b == 0 { None } else { Some(a / b) }
     }
 
-    pub fn divide(a: i32, b: i32) -> Result<i32, &str> {
-        if b == 0 { Err("division by zero") } else { Ok(a / b) }
+    pub fn divide(a: i32, b: i32) -> Result<i32, &'static str> {
+        if b == 0 {
+            Err("division by zero")
+        } else {
+            Ok(a / b)
+        }
     }
 }
 
@@ -47,12 +51,12 @@ mod tests {
 
     #[test]
     fn test_divide() {
-        assert_eq!(divide(10, 2), Some(5));
+        assert_eq!(divide(10, 2), Ok(5));
     }
 
     #[test]
     fn test_divide_by_zero() {
-        assert_eq!(divide(10, 0), None);
+        assert_eq!(divide(10, 0), Err("division by zero"));
     }
 }
 
