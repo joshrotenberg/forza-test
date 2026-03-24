@@ -7,6 +7,7 @@
 [global]
 repo = "joshrotenberg/forza-test"
 model = "claude-sonnet-4-6"
+github_backend = "gh_cli"
 gate_label = "forza:ready"
 branch_pattern = "automation/{issue}-{slug}"
 max_concurrency = 3
