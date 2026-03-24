@@ -65,3 +65,14 @@ mod auto_merge_tests {
         assert_eq!(multiply(42, 0), 0);
     }
 }
+
+#[cfg(test)]
+mod failing_tests {
+    use super::calculator::*;
+
+    #[test]
+    fn test_broken_addition() {
+        // This test intentionally fails — forza should fix it
+        assert_eq!(add(2, 2), 5, "2 + 2 should equal 5 (this is wrong)");
+    }
+}
