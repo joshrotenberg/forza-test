@@ -23,6 +23,11 @@ pub mod calculator {
             Ok(a / b)
         }
     }
+
+    /// Returns true if n is positive.
+    pub fn is_positive(n: i32) -> bool {
+        n > 0
+    }
 }
 
 #[cfg(test)]
@@ -52,6 +57,13 @@ mod tests {
     #[test]
     fn test_divide_by_zero() {
         assert_eq!(divide(10, 0), Err("division by zero"));
+    }
+
+    #[test]
+    fn test_is_positive() {
+        assert!(is_positive(5));
+        assert!(!is_positive(0));
+        assert!(!is_positive(-3));
     }
 }
 
