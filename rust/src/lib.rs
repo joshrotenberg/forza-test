@@ -80,3 +80,8 @@ mod failing_tests {
 pub fn cube(n: i32) -> i32 {
     n * n * n
 }
+
+/// Square a number (added on branch).
+pub fn square(n: i32) -> i32 {
+    n * n
+}
