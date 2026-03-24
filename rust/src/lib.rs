@@ -19,6 +19,11 @@ pub mod calculator {
     pub fn divide(a: i32, b: i32) -> Option<i32> {
         if b == 0 { None } else { Some(a / b) }
     }
+
+    /// Return the remainder of dividing two numbers.
+    pub fn remainder(a: i32, b: i32) -> i32 {
+        a % b
+    }
 }
 
 #[cfg(test)]
@@ -48,5 +53,10 @@ mod tests {
     #[test]
     fn test_divide_by_zero() {
         assert_eq!(divide(10, 0), None);
+    }
+
+    #[test]
+    fn test_remainder() {
+        assert_eq!(remainder(10, 3), 1);
     }
 }
