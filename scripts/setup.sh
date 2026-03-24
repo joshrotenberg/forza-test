@@ -88,3 +88,52 @@ echo "Or label all at once:"
 echo "  for i in \$(gh issue list --repo $REPO --json number --jq '.[].number'); do"
 echo "    gh issue edit \$i --repo $REPO --add-label forza:ready"
 echo "  done"
+
+echo ""
+echo "=== Creating failure scenarios ==="
+
+gh issue create --repo "$REPO" \
+    --title "F1: intentionally vague issue with no acceptance criteria" \
+    --body "Make things better. Fix stuff. Improve quality." \
+    --label "test:bug-rust"
+
+gh issue create --repo "$REPO" \
+    --title "F2: reference nonexistent file" \
+    --body "Fix the bug in \`rust/src/networking.rs\` line 42 where the TCP connection leaks.
+
+## Acceptance criteria
+- The TCP connection is properly closed
+- No resource leaks under load testing
+
+Note: this file does not exist. The agent should plan around this gracefully." \
+    --label "test:bug-rust"
+
+echo ""
+echo "=== Creating cross-language scenario ==="
+
+gh issue create --repo "$REPO" \
+    --title "X1: add absolute value to both Rust and Go calculators" \
+    --body "Add an \`abs(n: i32) -> i32\` function (Rust) and \`Abs(n int) int\` function (Go) to both calculator modules. Both should return the absolute value of the input.
+
+## Acceptance criteria
+- Rust: \`abs\` function in \`rust/src/lib.rs\` with test
+- Go: \`Abs\` function in \`go/calculator.go\` with test
+- Both \`cargo test\` and \`go test ./...\` pass" \
+    --label "test:feature-rust"
+
+echo ""
+echo "=== Creating research verification scenario ==="
+
+gh issue create --repo "$REPO" \
+    --title "R5: research testing frameworks for Go calculator" \
+    --body "Research Go testing best practices for the calculator module. Specifically:
+
+1. Should we use table-driven tests?
+2. Is the standard testing package sufficient or should we use testify?
+3. Are there any edge cases in integer arithmetic we should test?
+
+Post findings as a comment with concrete recommendations." \
+    --label "test:research-rust"
+
+echo ""
+echo "=== Done (Phase 2 scenarios) ==="
