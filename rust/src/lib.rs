@@ -19,6 +19,11 @@ pub mod calculator {
     pub fn divide(a: i32, b: i32) -> Option<i32> {
         if b == 0 { None } else { Some(a / b) }
     }
+
+    /// Compute the modulo of two numbers. Returns None if divisor is zero.
+    pub fn modulo(a: i32, b: i32) -> Option<i32> {
+        if b == 0 { None } else { Some(a % b) }
+    }
 }
 
 #[cfg(test)]
@@ -48,5 +53,15 @@ mod tests {
     #[test]
     fn test_divide_by_zero() {
         assert_eq!(divide(10, 0), None);
+    }
+
+    #[test]
+    fn test_modulo() {
+        assert_eq!(modulo(10, 3), Some(1));
+    }
+
+    #[test]
+    fn test_modulo_by_zero() {
+        assert_eq!(modulo(10, 0), None);
     }
 }
