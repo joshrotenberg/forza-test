@@ -75,3 +75,8 @@ mod failing_tests {
         assert_eq!(add(2, 2), 4, "2 + 2 should equal 4");
     }
 }
+
+/// Cube a number (added on main).
+pub fn cube(n: i32) -> i32 {
+    n * n * n
+}
