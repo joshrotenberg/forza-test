@@ -33,3 +33,17 @@ func TestDivideByZero(t *testing.T) {
 		t.Error("Divide(10, 0) should return error")
 	}
 }
+
+func TestSqrt(t *testing.T) {
+	got, err := Sqrt(9)
+	if err != nil || got != 3 {
+		t.Errorf("Sqrt(9) = %d, %v, want 3, nil", got, err)
+	}
+}
+
+func TestSqrtNegative(t *testing.T) {
+	_, err := Sqrt(-1)
+	if err == nil {
+		t.Error("Sqrt(-1) should return error")
+	}
+}

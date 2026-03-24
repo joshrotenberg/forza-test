@@ -1,9 +1,13 @@
 // Package calculator provides simple arithmetic operations for testing forza workflows.
 package calculator
 
-import "errors"
+import (
+	"errors"
+	"math"
+)
 
 var ErrDivideByZero = errors.New("division by zero")
+var ErrNegativeInput = errors.New("negative input")
 
 // Add returns the sum of two integers.
 func Add(a, b int) int {
@@ -26,4 +30,12 @@ func Divide(a, b int) (int, error) {
 		return 0, ErrDivideByZero
 	}
 	return a / b, nil
+}
+
+// Sqrt returns the integer square root of n. Returns an error if n is negative.
+func Sqrt(n int) (int, error) {
+	if n < 0 {
+		return 0, ErrNegativeInput
+	}
+	return int(math.Sqrt(float64(n))), nil
 }
