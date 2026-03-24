@@ -33,3 +33,21 @@ func TestDivideByZero(t *testing.T) {
 		t.Error("Divide(10, 0) should return error")
 	}
 }
+
+func TestPowerZeroExp(t *testing.T) {
+	if got := Power(5, 0); got != 1 {
+		t.Errorf("Power(5, 0) = %d, want 1", got)
+	}
+}
+
+func TestPowerOneExp(t *testing.T) {
+	if got := Power(5, 1); got != 5 {
+		t.Errorf("Power(5, 1) = %d, want 5", got)
+	}
+}
+
+func TestPower(t *testing.T) {
+	if got := Power(2, 10); got != 1024 {
+		t.Errorf("Power(2, 10) = %d, want 1024", got)
+	}
+}

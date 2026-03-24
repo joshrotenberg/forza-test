@@ -27,3 +27,12 @@ func Divide(a, b int) (int, error) {
 	}
 	return a / b, nil
 }
+
+// Power returns base raised to the power of exp using iterative multiplication.
+func Power(base, exp int) int {
+	result := 1
+	for i := 0; i < exp; i++ {
+		result *= base
+	}
+	return result
+}
