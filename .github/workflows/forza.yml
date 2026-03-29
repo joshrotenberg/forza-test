@@ -1,0 +1,39 @@
+name: forza
+
+on:
+  issues:
+    types: [labeled]
+  pull_request:
+    types: [labeled, synchronize]
+  check_suite:
+    types: [completed]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  forza:
+    runs-on: ubuntu-latest
+    # Only trigger on forza-relevant labels
+    if: |
+      github.event_name == 'workflow_dispatch' ||
+      github.event_name == 'check_suite' ||
+      (github.event_name == 'issues' && startsWith(github.event.label.name, 'forza:')) ||
+      (github.event_name == 'issues' && startsWith(github.event.label.name, 'test:')) ||
+      (github.event_name == 'pull_request')
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: anthropics/setup-claude-code@v1
+
+      - uses: joshrotenberg/forza/action@feat/github-action
+        with:
+          version: source
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
