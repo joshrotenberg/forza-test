@@ -33,6 +33,12 @@ pub mod calculator {
     pub fn is_even(n: i32) -> bool {
         n % 2 == 0
     }
+
+    /// Raise base to the power of exp.
+    pub fn pow(base: i32, exp: u32) -> i32 {
+        let result = base.pow(exp);
+        result
+    }
 }
 
 #[cfg(test)]
@@ -75,6 +81,13 @@ mod tests {
     fn test_is_even() {
         assert!(is_even(4));
         assert!(!is_even(3));
+    }
+
+    #[test]
+    fn test_pow() {
+        assert_eq!(pow(2, 3), 8);
+        assert_eq!(pow(3, 2), 9);
+        assert_eq!(pow(5, 0), 1);
     }
 }
 
