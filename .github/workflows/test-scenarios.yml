@@ -52,15 +52,21 @@ jobs:
 
       - name: Install forza
         run: |
+          set -euo pipefail
           VERSION=${{ inputs.forza_version || 'source' }}
+
           if [ "$VERSION" = "source" ]; then
+            echo "Installing forza from source..."
             cargo install forza --git https://github.com/joshrotenberg/forza --locked
             forza --version
             exit 0
           fi
+
           if [ "$VERSION" = "latest" ]; then
             VERSION=$(curl -sL https://api.github.com/repos/joshrotenberg/forza/releases/latest | jq -r .tag_name | sed 's/^forza-v//')
           fi
+
+          echo "Installing forza v${VERSION}..."
           curl -sL "https://github.com/joshrotenberg/forza/releases/download/forza-v${VERSION}/forza-x86_64-unknown-linux-gnu.tar.xz" \
             | tar xJ --strip-components=1 -C /usr/local/bin
           forza --version
