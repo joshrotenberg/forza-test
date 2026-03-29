@@ -17,7 +17,7 @@ on:
           - all
       forza_version:
         description: "forza version: latest or source"
-        default: "latest"
+        default: "source"
   schedule:
     - cron: "0 6 * * *"
   repository_dispatch:
@@ -52,7 +52,12 @@ jobs:
 
       - name: Install forza
         run: |
-          VERSION=${{ inputs.forza_version || 'latest' }}
+          VERSION=${{ inputs.forza_version || 'source' }}
+          if [ "$VERSION" = "source" ]; then
+            cargo install forza --git https://github.com/joshrotenberg/forza --locked
+            forza --version
+            exit 0
+          fi
           if [ "$VERSION" = "latest" ]; then
             VERSION=$(curl -sL https://api.github.com/repos/joshrotenberg/forza/releases/latest | jq -r .tag_name | sed 's/^forza-v//')
           fi
@@ -63,9 +68,7 @@ jobs:
       - name: Pick a random function to add
         id: pick
         run: |
-          # Pick a function that doesn't exist yet to keep tests fresh
           FUNCS=("factorial" "fibonacci" "gcd" "lcm" "min" "max" "clamp" "sign" "pow_mod" "sum_range")
-          # Check which ones already exist
           for fn in "${FUNCS[@]}"; do
             if ! grep -q "pub fn $fn" rust/src/lib.rs 2>/dev/null; then
               echo "func=$fn" >> "$GITHUB_OUTPUT"
@@ -95,11 +98,8 @@ jobs:
       - name: Verify results
         run: |
           FUNC="${{ steps.pick.outputs.func }}"
-
-          # Wait a moment for GitHub API
           sleep 5
 
-          # Find the PR forza created
           PR=$(gh pr list --repo "$REPO" \
             --json number,headRefName \
             --jq '.[] | select(.headRefName | startswith("automation/")) | .number' \
@@ -111,11 +111,9 @@ jobs:
           fi
           echo "PASS: PR #$PR created"
 
-          # Checkout the PR and verify
           gh pr checkout "$PR" --repo "$REPO"
           cd rust
 
-          # Check the function exists
           if grep -q "pub fn $FUNC" src/lib.rs; then
             echo "PASS: function $FUNC exists"
           else
@@ -134,13 +132,11 @@ jobs:
       - name: Cleanup
         if: always()
         run: |
-          # Close issue
           if [ -n "${{ steps.issue.outputs.number }}" ]; then
             gh issue close ${{ steps.issue.outputs.number }} --repo "$REPO" \
               --comment "Test scenario complete. Cleaning up." 2>/dev/null || true
           fi
 
-          # Close any PRs from this test
           for pr in $(gh pr list --repo "$REPO" --json number,headRefName --jq '.[] | select(.headRefName | startswith("automation/")) | .number' 2>/dev/null); do
             gh pr close "$pr" --repo "$REPO" --delete-branch 2>/dev/null || true
           done
