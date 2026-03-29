@@ -85,7 +85,7 @@ jobs:
       - name: Run forza
         run: |
           forza issue ${{ steps.issue.outputs.number }} \
-            --workflow quick \
+            --workflow bug \
             --config forza.toml
 
       - name: Verify results
