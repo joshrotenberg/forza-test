@@ -40,28 +40,34 @@ jobs:
       REPO: joshrotenberg/forza-test
       SCENARIO_TAG: scenario/bug-rust-v1
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - uses: dtolnay/rust-toolchain@stable
 
-      - uses: joshrotenberg/forza/action@main
-        id: install
-        with:
-          version: ${{ inputs.forza_version || 'latest' }}
-          agent: claude
-          command: skip
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      - name: Install Claude Code
+        run: |
+          curl -fsSL https://claude.ai/install.sh | bash
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
+      - name: Install forza
+        run: |
+          VERSION=${{ inputs.forza_version || 'latest' }}
+          if [ "$VERSION" = "latest" ]; then
+            VERSION=$(curl -sL https://api.github.com/repos/joshrotenberg/forza/releases/latest | jq -r .tag_name | sed 's/^forza-v//')
+          fi
+          curl -sL "https://github.com/joshrotenberg/forza/releases/download/forza-v${VERSION}/forza-x86_64-unknown-linux-gnu.tar.xz" \
+            | tar xJ --strip-components=1 -C /usr/local/bin
+          forza --version
 
       - name: Create test branch from scenario tag
         id: setup
         run: |
           BRANCH="test/bug-rust-$(date +%s)"
           echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
-
-          # Create branch from the scenario tag
-          git fetch origin "refs/tags/$SCENARIO_TAG:refs/tags/$SCENARIO_TAG"
           git checkout -b "$BRANCH" "$SCENARIO_TAG"
           git push origin "$BRANCH"
 
@@ -70,15 +76,13 @@ jobs:
         run: |
           NUMBER=$(gh issue create --repo "$REPO" \
             --title "[test] fix compile error in calculator power function" \
-            --body "The power function in rust/src/lib.rs has a typo — \`reslt\` instead of \`result\`. Fix it so cargo build succeeds and cargo test passes." \
+            --body "The power function in rust/src/lib.rs has a typo — reslt instead of result. Fix it so cargo build succeeds and cargo test passes." \
             --label test:bug-rust \
             | grep -oP '\d+$')
           echo "number=$NUMBER" >> "$GITHUB_OUTPUT"
           echo "Created issue #$NUMBER"
 
       - name: Run forza
-        env:
-          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
         run: |
           forza issue ${{ steps.issue.outputs.number }} \
             --workflow quick \
@@ -86,17 +90,12 @@ jobs:
 
       - name: Verify results
         run: |
-          # Check that a PR was created
+          # Find the PR forza created
+          sleep 5
           PR=$(gh pr list --repo "$REPO" \
-            --head "${{ steps.setup.outputs.branch }}" \
-            --json number --jq '.[0].number' 2>/dev/null || true)
-
-          # Also check automation branch
-          if [ -z "$PR" ]; then
-            PR=$(gh pr list --repo "$REPO" \
-              --search "issue #${{ steps.issue.outputs.number }}" \
-              --json number --jq '.[0].number' 2>/dev/null || true)
-          fi
+            --json number,headRefName \
+            --jq '.[] | select(.headRefName | startswith("automation/")) | .number' \
+            | tail -1)
 
           if [ -z "$PR" ]; then
             echo "FAIL: no PR created"
@@ -105,23 +104,15 @@ jobs:
 
           echo "PR #$PR created"
 
-          # Check the PR builds
+          # Checkout the PR and verify
           gh pr checkout "$PR" --repo "$REPO"
-          cd rust && cargo build 2>&1
-          if [ $? -eq 0 ]; then
-            echo "PASS: cargo build succeeds"
-          else
-            echo "FAIL: cargo build fails"
-            exit 1
-          fi
+          cd rust
+
+          cargo build 2>&1
+          echo "PASS: cargo build succeeds"
 
           cargo test 2>&1
-          if [ $? -eq 0 ]; then
-            echo "PASS: cargo test passes"
-          else
-            echo "FAIL: cargo test fails"
-            exit 1
-          fi
+          echo "PASS: cargo test passes"
 
           echo "PASS: bug-rust scenario complete"
 
@@ -129,11 +120,13 @@ jobs:
         if: always()
         run: |
           # Close issue
-          gh issue close ${{ steps.issue.outputs.number }} --repo "$REPO" \
-            --comment "Test complete. Cleaning up." 2>/dev/null || true
+          if [ -n "${{ steps.issue.outputs.number }}" ]; then
+            gh issue close ${{ steps.issue.outputs.number }} --repo "$REPO" \
+              --comment "Test scenario complete. Cleaning up." 2>/dev/null || true
+          fi
 
-          # Close PR
-          for pr in $(gh pr list --repo "$REPO" --search "issue #${{ steps.issue.outputs.number }}" --json number --jq '.[].number' 2>/dev/null); do
+          # Close any PRs from this test
+          for pr in $(gh pr list --repo "$REPO" --json number,headRefName --jq '.[] | select(.headRefName | startswith("automation/")) | .number' 2>/dev/null); do
             gh pr close "$pr" --repo "$REPO" --delete-branch 2>/dev/null || true
           done
 
