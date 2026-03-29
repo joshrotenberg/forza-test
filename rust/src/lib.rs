@@ -24,14 +24,14 @@ pub mod calculator {
         }
     }
 
-    /// Returns true if n is positive.
-    pub fn is_positive(n: i32) -> bool {
-        n > 0
-    }
-
-    /// Returns true if n is even, false if odd.
-    pub fn is_even(n: i32) -> bool {
-        n % 2 == 0
+    /// Compute a to the power of b.
+    pub fn power(a: i32, b: u32) -> i32 {
+        // BUG: references undefined variable `result`
+        let mut result = 1;
+        for _ in 0..b {
+            reslt = reslt * a;  // typo: reslt instead of result
+        }
+        result
     }
 }
 
@@ -65,45 +65,8 @@ mod tests {
     }
 
     #[test]
-    fn test_is_positive() {
-        assert!(is_positive(5));
-        assert!(!is_positive(0));
-        assert!(!is_positive(-3));
+    fn test_power() {
+        assert_eq!(power(2, 3), 8);
+        assert_eq!(power(5, 0), 1);
     }
-
-    #[test]
-    fn test_is_even() {
-        assert!(is_even(4));
-        assert!(!is_even(3));
-    }
-}
-
-#[cfg(test)]
-mod auto_merge_tests {
-    use super::calculator::*;
-
-    #[test]
-    fn test_add_negative() {
-        assert_eq!(add(-1, -2), -3);
-    }
-
-    #[test]
-    fn test_multiply_by_zero() {
-        assert_eq!(multiply(42, 0), 0);
-    }
-}
-
-#[cfg(test)]
-mod failing_tests {
-    use super::calculator::*;
-
-    #[test]
-    fn test_broken_addition() {
-        assert_eq!(add(2, 2), 4, "2 + 2 should equal 4");
-    }
-}
-
-/// Cube a number (added on main).
-pub fn cube(n: i32) -> i32 {
-    n * n * n
 }
