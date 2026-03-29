@@ -1,0 +1,141 @@
+# Forza integration test framework
+#
+# Runs forza against known-broken scenarios and verifies the results.
+# Each scenario is an immutable git tag with broken code. The workflow
+# creates a throwaway branch, creates an issue, runs forza, verifies,
+# and cleans up.
+
+name: test-scenarios
+
+on:
+  workflow_dispatch:
+    inputs:
+      scenario:
+        description: "Scenario to run (or 'all')"
+        default: "bug-rust"
+        type: choice
+        options:
+          - bug-rust
+          - all
+      forza_version:
+        description: "forza version: latest or source"
+        default: "latest"
+  # Triggered from forza repo on PR
+  repository_dispatch:
+    types: [forza-test]
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  bug-rust:
+    name: "Scenario: bug-rust"
+    runs-on: ubuntu-latest
+    if: |
+      inputs.scenario == 'bug-rust' || inputs.scenario == 'all' ||
+      github.event_name == 'repository_dispatch'
+    env:
+      REPO: joshrotenberg/forza-test
+      SCENARIO_TAG: scenario/bug-rust-v1
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+
+      - uses: joshrotenberg/forza/action@main
+        id: install
+        with:
+          version: ${{ inputs.forza_version || 'latest' }}
+          agent: claude
+          command: skip
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+
+      - name: Create test branch from scenario tag
+        id: setup
+        run: |
+          BRANCH="test/bug-rust-$(date +%s)"
+          echo "branch=$BRANCH" >> "$GITHUB_OUTPUT"
+
+          # Create branch from the scenario tag
+          git fetch origin "refs/tags/$SCENARIO_TAG:refs/tags/$SCENARIO_TAG"
+          git checkout -b "$BRANCH" "$SCENARIO_TAG"
+          git push origin "$BRANCH"
+
+      - name: Create test issue
+        id: issue
+        run: |
+          NUMBER=$(gh issue create --repo "$REPO" \
+            --title "[test] fix compile error in calculator power function" \
+            --body "The power function in rust/src/lib.rs has a typo — \`reslt\` instead of \`result\`. Fix it so cargo build succeeds and cargo test passes." \
+            --label test:bug-rust \
+            | grep -oP '\d+$')
+          echo "number=$NUMBER" >> "$GITHUB_OUTPUT"
+          echo "Created issue #$NUMBER"
+
+      - name: Run forza
+        env:
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+        run: |
+          forza issue ${{ steps.issue.outputs.number }} \
+            --workflow quick \
+            --config forza.toml
+
+      - name: Verify results
+        run: |
+          # Check that a PR was created
+          PR=$(gh pr list --repo "$REPO" \
+            --head "${{ steps.setup.outputs.branch }}" \
+            --json number --jq '.[0].number' 2>/dev/null || true)
+
+          # Also check automation branch
+          if [ -z "$PR" ]; then
+            PR=$(gh pr list --repo "$REPO" \
+              --search "issue #${{ steps.issue.outputs.number }}" \
+              --json number --jq '.[0].number' 2>/dev/null || true)
+          fi
+
+          if [ -z "$PR" ]; then
+            echo "FAIL: no PR created"
+            exit 1
+          fi
+
+          echo "PR #$PR created"
+
+          # Check the PR builds
+          gh pr checkout "$PR" --repo "$REPO"
+          cd rust && cargo build 2>&1
+          if [ $? -eq 0 ]; then
+            echo "PASS: cargo build succeeds"
+          else
+            echo "FAIL: cargo build fails"
+            exit 1
+          fi
+
+          cargo test 2>&1
+          if [ $? -eq 0 ]; then
+            echo "PASS: cargo test passes"
+          else
+            echo "FAIL: cargo test fails"
+            exit 1
+          fi
+
+          echo "PASS: bug-rust scenario complete"
+
+      - name: Cleanup
+        if: always()
+        run: |
+          # Close issue
+          gh issue close ${{ steps.issue.outputs.number }} --repo "$REPO" \
+            --comment "Test complete. Cleaning up." 2>/dev/null || true
+
+          # Close PR
+          for pr in $(gh pr list --repo "$REPO" --search "issue #${{ steps.issue.outputs.number }}" --json number --jq '.[].number' 2>/dev/null); do
+            gh pr close "$pr" --repo "$REPO" --delete-branch 2>/dev/null || true
+          done
+
+          # Delete test branch
+          git push origin --delete "${{ steps.setup.outputs.branch }}" 2>/dev/null || true
