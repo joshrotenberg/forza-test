@@ -26,11 +26,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - uses: dtolnay/rust-toolchain@stable
-
-      - uses: joshrotenberg/forza/action@feat/github-action
+      - uses: joshrotenberg/forza/action@main
         with:
-          version: source
+          version: latest
           agent: claude
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
