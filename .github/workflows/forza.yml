@@ -29,7 +29,8 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@stable
 
-      - uses: anthropics/setup-claude-code@v1
+      - name: Install Claude Code
+        run: curl -fsSL https://claude.ai/install.sh | bash
 
       - uses: joshrotenberg/forza/action@feat/github-action
         with:
