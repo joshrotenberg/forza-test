@@ -1,9 +1,7 @@
 # Forza integration test framework
 #
-# Runs forza against known-broken scenarios and verifies the results.
-# Each scenario is an immutable git tag with broken code. The workflow
-# creates a throwaway branch, creates an issue, runs forza, verifies,
-# and cleans up.
+# Runs forza against issues that add features to the existing codebase.
+# Each test run creates an issue, runs forza, verifies the PR, and cleans up.
 
 name: test-scenarios
 
@@ -12,15 +10,16 @@ on:
     inputs:
       scenario:
         description: "Scenario to run (or 'all')"
-        default: "bug-rust"
+        default: "add-feature"
         type: choice
         options:
-          - bug-rust
+          - add-feature
           - all
       forza_version:
         description: "forza version: latest or source"
         default: "latest"
-  # Triggered from forza repo on PR
+  schedule:
+    - cron: "0 6 * * *"
   repository_dispatch:
     types: [forza-test]
 
@@ -30,21 +29,19 @@ permissions:
   pull-requests: write
 
 jobs:
-  bug-rust:
-    name: "Scenario: bug-rust"
+  add-feature:
+    name: "Scenario: add-feature"
     runs-on: ubuntu-latest
     if: |
-      inputs.scenario == 'bug-rust' || inputs.scenario == 'all' ||
-      github.event_name == 'repository_dispatch'
+      inputs.scenario == 'add-feature' || inputs.scenario == 'all' ||
+      github.event_name == 'repository_dispatch' ||
+      github.event_name == 'schedule'
     env:
       REPO: joshrotenberg/forza-test
-      SCENARIO_TAG: scenario/bug-rust-v1
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
     steps:
       - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0
 
       - uses: dtolnay/rust-toolchain@stable
 
@@ -63,28 +60,46 @@ jobs:
             | tar xJ --strip-components=1 -C /usr/local/bin
           forza --version
 
+      - name: Pick a random function to add
+        id: pick
+        run: |
+          # Pick a function that doesn't exist yet to keep tests fresh
+          FUNCS=("factorial" "fibonacci" "gcd" "lcm" "min" "max" "clamp" "sign" "pow_mod" "sum_range")
+          # Check which ones already exist
+          for fn in "${FUNCS[@]}"; do
+            if ! grep -q "pub fn $fn" rust/src/lib.rs 2>/dev/null; then
+              echo "func=$fn" >> "$GITHUB_OUTPUT"
+              echo "Picked function: $fn"
+              break
+            fi
+          done
+
       - name: Create test issue
         id: issue
         run: |
+          FUNC="${{ steps.pick.outputs.func }}"
           NUMBER=$(gh issue create --repo "$REPO" \
-            --title "[test] fix compile error in calculator power function" \
-            --body "The power function in rust/src/lib.rs has a typo — reslt instead of result. Fix it so cargo build succeeds and cargo test passes." \
-            --label test:bug-rust \
+            --title "[test] add ${FUNC} function to Rust calculator" \
+            --body "Add a \`${FUNC}\` function to the calculator module in \`rust/src/lib.rs\`. Include at least 2 tests. The function should handle edge cases (zero, negative numbers where applicable). Run \`cargo test\` to verify." \
+            --label test:feature-rust \
             | grep -oP '\d+$')
           echo "number=$NUMBER" >> "$GITHUB_OUTPUT"
-          echo "Created issue #$NUMBER"
+          echo "Created issue #$NUMBER for function: $FUNC"
 
       - name: Run forza
         run: |
           forza issue ${{ steps.issue.outputs.number }} \
             --workflow quick \
-            --base-branch "$SCENARIO_TAG" \
             --config forza.toml
 
       - name: Verify results
         run: |
-          # Find the PR forza created
+          FUNC="${{ steps.pick.outputs.func }}"
+
+          # Wait a moment for GitHub API
           sleep 5
+
+          # Find the PR forza created
           PR=$(gh pr list --repo "$REPO" \
             --json number,headRefName \
             --jq '.[] | select(.headRefName | startswith("automation/")) | .number' \
@@ -94,12 +109,19 @@ jobs:
             echo "FAIL: no PR created"
             exit 1
           fi
-
-          echo "PR #$PR created"
+          echo "PASS: PR #$PR created"
 
           # Checkout the PR and verify
           gh pr checkout "$PR" --repo "$REPO"
           cd rust
+
+          # Check the function exists
+          if grep -q "pub fn $FUNC" src/lib.rs; then
+            echo "PASS: function $FUNC exists"
+          else
+            echo "FAIL: function $FUNC not found in src/lib.rs"
+            exit 1
+          fi
 
           cargo build 2>&1
           echo "PASS: cargo build succeeds"
@@ -107,7 +129,7 @@ jobs:
           cargo test 2>&1
           echo "PASS: cargo test passes"
 
-          echo "PASS: bug-rust scenario complete"
+          echo "PASS: add-feature scenario complete"
 
       - name: Cleanup
         if: always()
