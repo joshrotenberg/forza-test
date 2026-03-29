@@ -17,7 +17,6 @@ permissions:
 jobs:
   forza:
     runs-on: ubuntu-latest
-    # Only trigger on forza-relevant labels
     if: |
       github.event_name == 'workflow_dispatch' ||
       github.event_name == 'check_suite' ||
@@ -29,12 +28,10 @@ jobs:
 
       - uses: dtolnay/rust-toolchain@stable
 
-      - name: Install Claude Code
-        run: curl -fsSL https://claude.ai/install.sh | bash
-
       - uses: joshrotenberg/forza/action@feat/github-action
         with:
           version: source
+          agent: claude
         env:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
