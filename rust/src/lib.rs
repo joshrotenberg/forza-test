@@ -33,6 +33,15 @@ pub mod calculator {
     pub fn is_even(n: i32) -> bool {
         n % 2 == 0
     }
+
+    /// Computes the factorial of n. Returns an error if n is negative.
+    pub fn factorial(n: i32) -> Result<u64, &'static str> {
+        if n < 0 {
+            Err("factorial of negative number")
+        } else {
+            Ok((1..=n as u64).product())
+        }
+    }
 }
 
 #[cfg(test)]
@@ -75,6 +84,19 @@ mod tests {
     fn test_is_even() {
         assert!(is_even(4));
         assert!(!is_even(3));
+    }
+
+    #[test]
+    fn test_factorial() {
+        assert_eq!(factorial(0), Ok(1));
+        assert_eq!(factorial(1), Ok(1));
+        assert_eq!(factorial(5), Ok(120));
+        assert_eq!(factorial(10), Ok(3628800));
+    }
+
+    #[test]
+    fn test_factorial_negative() {
+        assert_eq!(factorial(-1), Err("factorial of negative number"));
     }
 }
 
